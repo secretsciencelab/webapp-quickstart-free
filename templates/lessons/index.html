@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% endblock head %}
+
+{% block body %}
+<h1>Lessons</h1>
+
+<div id="lesson-index">
+ <div class='lesson-btn' data-lesson='1' role='button'>Lesson 1 - Make the world better</div>
+ <div class='lesson-btn' data-lesson='2' role='button'>Lesson 2 - Be you</div>
+ <div class='lesson-btn' data-lesson='3' role='button'>Lesson 3 - Don't give up</div>
+ <div class='lesson-btn' data-lesson='4' role='button'>Lesson 4 - Never stop learning</div>
+ <div class='lesson-btn' data-lesson='5' role='button'>Lesson 5 - Smile</div>
+</div>
+<div id="lesson" class="mt-3"></div>
+{% endblock body %}
+
+{% block script %}
+var isSubActive = false;
+g_firebaseAuth.httpGet("/subscriber/access", function(data) {
+  if (data.sub_active)
+    isSubActive = true;
+});
+
+$(".lesson-btn").click(function(e) {
+  e.preventDefault();
+
+  if (!isSubActive) {
+    alertify.alert("Please <a href='/subscribe'>subscribe</a> to unlock this lesson.").setHeader("Not subscribed");
+    return;
+  }
+
+  const lessonId = $(this).data('lesson');
+  const url = "/lesson/"+lessonId;
+  g_firebaseAuth.httpGet(url, function(data) {
+    if (data == "") 
+      return;
+    $("#lesson").html(data);
+  });
+  return false;
+});
+{% endblock script %}

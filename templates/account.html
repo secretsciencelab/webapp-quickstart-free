@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div><a id="acct-portal" href="#billing">Manage subscription</a></div>
+<div><a id="signout-btn" href="#signout">Sign out</a></div>
+{% endblock body %}
+
+{% block script %}
+// connect signout button
+$("#signout-btn").on('click auxclick', function(e) {
+  e.preventDefault();
+  g_firebaseAuth.logout();
+  window.location.href = "/";
+  return false;
+});
+
+$("#acct-portal").parent().hide();
+g_firebaseAuth.httpGet("/subscriber/access", function(response) {
+  if (response.status != "success")
+    return;
+
+  if (response.sub_active) {
+    /*
+     * user is subscribed
+     */
+    // connect to Stripe portal
+    $("#acct-portal").on('click auxclick', function(e) {
+      e.preventDefault();
+ 
+      const user = g_firebaseAuth.getUser();
+      if (!user) {
+        alert('Please Sign In above, then try again.');
+        return false;
+      }
+ 
+      g_firebaseAuth.httpGet("/subscriber/portal", function(data) {
+        console.log(data);
+        if (data.status != 'success') {
+          alert('Error, no active Premium account.');
+          return false;
+        }
+ 
+        window.location.href = data.url;
+        return false;
+      });
+ 
+      return false;
+    });
+    $("#acct-portal").parent().show();
+  } else {
+    /*
+     * user is not subscribed
+     */
+  }
+});
+{% endblock script %}
+

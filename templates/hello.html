@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/fire/fire.css">
+<script src="/static/fire/fire.js"></script>
+{% endblock head %}
+
+{% block body %}
+<div>{{ message }}</div>
+
+<div id="fire-note">Click the scene below to light the campfire...</div>
+<div id="fire" class="cssfire" role="button"></div>
+{% endblock body %}
+
+{% block script %}
+  var fire = new Fire({
+    'selector': '#fire'
+  });
+
+  $("#fire").click(function(e) {
+    e.preventDefault();
+
+    // save original note
+    if (!$("#fire-note").data('orig-note'))
+      $("#fire-note").data('orig-note', $("#fire-note").html());
+
+    if (!$("#fire").data('fire-on')) {
+      // only allow subscribers to light the campfire
+      if (!g_firebaseAuth.getUser())
+        alertify.alert("Please sign in.").setHeader("Not signed in");
+      else {
+        $("#fire-note").html("Lighting campfire...");
+        g_firebaseAuth.httpGet("/subscriber/access", function(data) {
+          if (data.sub_active) {
+            $("#fire-note").html("Success :)");
+            fire.start();
+            $("#fire").data('fire-on', true);
+          } else {
+            $("#fire-note").html($("#fire-note").data('orig-note'));
+            alertify.alert("Please <a href='/subscribe'>subscribe</a> to light the campfire.").setHeader("Not subscribed");
+          }
+        });
+      }
+    } else {
+      fire.stop();
+      $("#fire").data('fire-on', false);
+      $("#fire-note").html($("#fire-note").data('orig-note'));
+    }
+
+    return false;
+  });
+{% endblock script %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block head %}
+<!-- Load Stripe.js on your website. -->
+<script src="https://js.stripe.com/v3"></script>
+{% endblock head %}
+
+{% block body %}
+<div class="row">
+ <div class="col col-12 col-sm-4 py-3"></div>
+ <div class="col col-12 col-sm-4 text-center p-sm-0 p-md-4">
+  <div class="shadow p-4 subscribe-cta">
+    <h5>Get Premium Access</h5>
+    <img src="/static/media/diamond.png" width="60px"/>
+    <div id="monthly-price" style="font-size: 2.5rem; font-weight: bold">$26</div>
+    <div>per month</div>
+    <button
+      class="btn btn-primary subscribe"
+      data-plan="premium-monthly"
+      role="link"
+      type="button">
+      Get Premium Access
+    </button>
+    <div><a href="#" class="subscribe" data-plan="premium-yearly">Or <span id="yearly-price">$13</span> per month if you pay yearly</a></div>
+  </div>
+ </div>
+ <div class="col col-12 col-sm-4 py-4"></div>
+</div>
+{% endblock body %}
+
+{% block script %}
+var stripe = Stripe('{{ stripe_pkey }}');
+
+$(".subscribe").on('click auxclick', function(e) {
+  console.log('click');
+  e.preventDefault();
+
+  if (!g_firebaseAuth)
+  {
+    alert('Please Sign In above, then try again.');
+    return false;
+  }
+
+  const user = g_firebaseAuth.getUser();
+  if (!user)
+  {
+    alert('Please Sign In above, then try again.');
+    return false;
+  }
+
+  // When the customer clicks on the button, redirect
+  // them to Checkout.
+  const plan = $(this).data('plan');
+  g_firebaseAuth.httpGet("/subscribe/session?plan="+plan, function(data) {
+    if (data.status != 'success')
+    {
+      console.log(data);
+      if (data.error == 'subscribed')
+        alert("You're already subscribed. Congrats!");
+      else
+        alert('Unexpected error. Please contact the site owner.');
+      return false;
+    }
+
+    stripe.redirectToCheckout({
+      sessionId: data.id
+    })
+    .then(function (result) {
+      if (result.error) {
+        // If `redirectToCheckout` fails due to a browser or network
+        // error, display the localized error message to your customer.
+        var displayError = document.getElementById('error-message');
+        displayError.textContent = result.error.message;
+      }
+    });
+  });
+
+  return false;
+});
+{% endblock script %}
+
